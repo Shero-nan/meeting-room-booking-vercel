@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1205会议室预定系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 500;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+        }
+
+        .notification.success {
+            background-color: #4caf50;
+        }
+
+        .notification.error {
+            background-color: #f44336;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .tab.active {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .date-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .week-section {
+            margin-bottom: 25px;
+        }
+
+        .week-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2196f3;
+        }
+
+        .date-tabs {
+            display: flex;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .date-tab {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+            font-size: 14px;
+        }
+
+        .date-tab:hover {
+            background-color: #e9ecef;
+        }
+
+        .date-tab.active {
+            background-color: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+
+        .date-tab.past {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .room-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .room-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .room-info {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .time-slot {
+            padding: 12px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .time-slot.available {
+            background-color: #e8f5e8;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .time-slot.available:hover {
+            background-color: #c8e6c9;
+        }
+
+        .time-slot.booked {
+            background-color: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+            cursor: not-allowed;
+        }
+
+        .time-slot.selected {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+            color: #1565c0;
+        }
+
+        .booking-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #1976d2;
+        }
+
+        .cancel-btn {
+            background-color: #f44336;
+            margin-left: 10px;
+        }
+
+        .cancel-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .booking-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .booking-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .day-bookings {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .day-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2196f3;
+        }
+
+        .booking-item {
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .booking-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .booking-time {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .booking-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .booking-status.confirmed {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .booking-status.cancelled {
+            background-color: #f5f5f5;
+            color: #757575;
+        }
+
+        .booking-status.expired {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+
+        .booking-info-row {
+            display: flex;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .booking-label {
+            font-weight: bold;
+            width: 80px;
+            color: #666;
+        }
+
+        .booking-value {
+            flex: 1;
+            color: #333;
+        }
+
+        .cancel-booking-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .sync-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: rgba(33, 150, 243, 0.9);
+            color: white;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .sync-status.syncing {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>1205会议室预定系统</h1>
+        </header>
+
+        <div class="notification" id="notification"></div>
+        <div class="sync-status" id="syncStatus">正在同步数据...</div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('booking')">预定会议室</button>
+            <button class="tab" onclick="switchTab('booking-details')">预定详情</button>
+        </div>
+
+        <div id="booking-tab" class="tab-content active">
+            <div class="date-selector">
+                <div class="week-section" id="thisWeek">
+                    <div class="week-title">本周</div>
+                    <div class="date-tabs" id="thisWeekDates"></div>
+                </div>
+                <div class="week-section" id="nextWeek">
+                    <div class="week-title">下周</div>
+                    <div class="date-tabs" id="nextWeekDates"></div>
+                </div>
+            </div>
+
+            <div class="room-card">
+                <div class="room-name">1205会议室</div>
+                <div class="room-info">容量: 20人 | 设备: 投影仪, 白板, 视频会议设备</div>
+                
+                <div class="time-slots" id="timeSlots"></div>
+            </div>
+
+            <div class="booking-form" id="bookingForm">
+                <h2>预定会议室</h2>
+                <div class="booking-info" id="bookingInfo"></div>
+                <div class="form-group">
+                    <label for="userName">预定人姓名</label>
+                    <input type="text" id="userName" placeholder="请输入您的姓名" required>
+                </div>
+                <div class="form-group">
+                    <label for="userPhone">联系电话</label>
+                    <input type="tel" id="userPhone" placeholder="请输入您的联系电话" required>
+                </div>
+                <div class="form-group">
+                    <label for="meetingPurpose">会议目的</label>
+                    <input type="text" id="meetingPurpose" placeholder="请简要说明会议目的" required>
+                </div>
+                <div class="form-group">
+                    <button id="confirmBooking">确认预定</button>
+                    <button id="cancelBooking" class="cancel-btn">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="booking-details-tab" class="tab-content">
+            <div class="booking-details">
+                <h3>预定详情</h3>
+                <div id="allBookingsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 会议室数据
+        const room = {
+            id: 1,
+            name: '1205会议室',
+            capacity: 20,
+            equipment: '投影仪, 白板, 视频会议设备'
+        };
+
+        // 时间段数据
+        const timeSlots = [
+            '08:00-09:00',
+            '09:00-10:00',
+            '10:00-11:00',
+            '11:00-12:00',
+            '12:00-13:00',
+            '13:00-14:00',
+            '14:00-15:00',
+            '15:00-16:00',
+            '16:00-17:00'
+        ];
+
+        // 预定记录 - 使用API存储
+        let bookings = [];
+        let selectedDate = null;
+        let selectedTimeSlot = null;
+
+        // API地址
+        const API_URL = '/api/bookings';
+
+        // 初始化页面
+        function init() {
+            loadBookings();
+            renderDateTabs();
+            selectToday();
+            setupEventListeners();
+            setupAutoRefresh();
+        }
+
+        // 从API加载预定数据
+        async function loadBookings() {
+            try {
+                const response = await fetch(API_URL);
+                bookings = await response.json();
+                console.log('从API加载预定数据:', bookings);
+                renderTimeSlots();
+                renderAllBookings();
+            } catch (error) {
+                console.error('加载预定数据失败:', error);
+                bookings = [];
+                renderTimeSlots();
+                renderAllBookings();
+            }
+        }
+
+        // 保存预定数据到API
+        async function saveBookings() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bookings[bookings.length - 1])
+                });
+                const data = await response.json();
+                console.log('预定数据已保存到API:', data);
+            } catch (error) {
+                console.error('保存预定数据失败:', error);
+            }
+        }
+
+        // 设置自动刷新
+        function setupAutoRefresh() {
+            // 每30秒刷新一次数据
+            setInterval(() => {
+                loadBookings();
+                showSyncStatus();
+            }, 30000);
+        }
+
+        // 显示同步状态
+        function showSyncStatus() {
+            const syncStatus = document.getElementById('syncStatus');
+            syncStatus.classList.add('syncing');
+            
+            setTimeout(() => {
+                syncStatus.classList.remove('syncing');
+            }, 2000);
+        }
+
+        // 渲染日期选项卡
+        function renderDateTabs() {
+            const thisWeekDates = document.getElementById('thisWeekDates');
+            const nextWeekDates = document.getElementById('nextWeekDates');
+            thisWeekDates.innerHTML = '';
+            nextWeekDates.innerHTML = '';
+            
+            const today = new Date();
+            const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            
+            // 获取本周的起始日期（周一）
+            const currentDay = today.getDay();
+            const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+            const monday = new Date(today);
+            monday.setDate(today.getDate() + mondayOffset);
+            
+            // 渲染本周日期
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(monday);
+                date.setDate(monday.getDate() + i);
+                
+                const dateStr = formatDate(date);
+                const weekDay = weekDays[date.getDay()];
+                const isToday = dateStr === formatDate(today);
+                const isPast = date < today && !isToday;
+                
+                const dateTab = document.createElement('div');
+                dateTab.className = 'date-tab';
+                if (isPast) dateTab.classList.add('past');
+                if (isToday) dateTab.style.fontWeight = 'bold';
+                dateTab.textContent = `${dateStr} ${weekDay}${isToday ? ' (今天)' : ''}`;
+                dateTab.dataset.date = dateStr;
+                
+                if (!isPast) {
+                    dateTab.addEventListener('click', selectDate);
+                }
+                
+                thisWeekDates.appendChild(dateTab);
+            }
+            
+            // 渲染下周日期
+            const nextMonday = new Date(monday);
+            nextMonday.setDate(monday.getDate() + 7);
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(nextMonday);
+                date.setDate(nextMonday.getDate() + i);
+                
+                const dateStr = formatDate(date);
+                const weekDay = weekDays[date.getDay()];
+                
+                const dateTab = document.createElement('div');
+                dateTab.className = 'date-tab';
+                dateTab.textContent = `${dateStr} ${weekDay}`;
+                dateTab.dataset.date = dateStr;
+                dateTab.addEventListener('click', selectDate);
+                
+                nextWeekDates.appendChild(dateTab);
+            }
+        }
+
+        // 格式化日期
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 选择今天
+        function selectToday() {
+            const today = new Date();
+            const todayStr = formatDate(today);
+            
+            // 如果今天已过17点，选择明天
+            if (today.getHours() >= 17) {
+                today.setDate(today.getDate() + 1);
+                const tomorrowStr = formatDate(today);
+                selectDateByDate(tomorrowStr);
+            } else {
+                selectDateByDate(todayStr);
+            }
+        }
+
+        // 选择日期
+        function selectDate(event) {
+            selectDateByDate(event.target.dataset.date);
+        }
+
+        // 根据日期字符串选择日期
+        function selectDateByDate(dateStr) {
+            // 清除之前的选择
+            document.querySelectorAll('.date-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 标记当前选择
+            const selectedTab = document.querySelector(`.date-tab[data-date="${dateStr}"]`);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            selectedDate = dateStr;
+            renderTimeSlots();
+        }
+
+        // 渲染时间段
+        function renderTimeSlots() {
+            const timeSlotsContainer = document.getElementById('timeSlots');
+            timeSlotsContainer.innerHTML = '';
+            
+            timeSlots.forEach(slot => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'time-slot';
+                slotElement.textContent = slot;
+                slotElement.dataset.timeSlot = slot;
+                
+                // 检查该时间段是否已被预定
+                const isBooked = bookings.some(booking => 
+                    booking.date === selectedDate && booking.timeSlot === slot && booking.status === 'confirmed'
+                );
+                
+                // 检查时间段是否已过
+                const isPast = isTimeSlotPast(selectedDate, slot);
+                
+                if (isBooked) {
+                    slotElement.classList.add('booked');
+                    slotElement.textContent += ' (已预定)';
+                } else if (isPast) {
+                    slotElement.classList.add('booked');
+                    slotElement.textContent += ' (已过时)';
+                } else {
+                    slotElement.classList.add('available');
+                    slotElement.addEventListener('click', selectTimeSlot);
+                }
+                
+                timeSlotsContainer.appendChild(slotElement);
+            });
+        }
+
+        // 检查时间段是否已过
+        function isTimeSlotPast(dateStr, timeSlot) {
+            const now = new Date();
+            const today = formatDate(now);
+            
+            if (dateStr !== today) {
+                return false;
+            }
+            
+            const [startTime] = timeSlot.split('-');
+            const [hours, minutes] = startTime.split(':').map(Number);
+            const slotTime = new Date();
+            slotTime.setHours(hours, minutes, 0, 0);
+            
+            return now >= slotTime;
+        }
+
+        // 选择时间段
+        function selectTimeSlot(event) {
+            // 清除之前的选择
+            document.querySelectorAll('.time-slot.selected').forEach(slot => {
+                slot.classList.remove('selected');
+            });
+            
+            // 标记当前选择
+            event.target.classList.add('selected');
+            selectedTimeSlot = event.target.dataset.timeSlot;
+            
+            showBookingForm();
+        }
+
+        // 显示预定表单
+        function showBookingForm() {
+            const bookingForm = document.getElementById('bookingForm');
+            const bookingInfo = document.getElementById('bookingInfo');
+            
+            bookingInfo.innerHTML = `
+                <strong>预定信息:</strong><br>
+                会议室: ${room.name}<br>
+                日期: ${selectedDate}<br>
+                时间: ${selectedTimeSlot}<br>
+                容量: ${room.capacity}人<br>
+                设备: ${room.equipment}
+            `;
+            
+            bookingForm.style.display = 'block';
+            bookingForm.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            document.getElementById('confirmBooking').addEventListener('click', confirmBooking);
+            document.getElementById('cancelBooking').addEventListener('click', cancelBooking);
+        }
+
+        // 确认预定
+        async function confirmBooking() {
+            const userName = document.getElementById('userName').value.trim();
+            const userPhone = document.getElementById('userPhone').value.trim();
+            const meetingPurpose = document.getElementById('meetingPurpose').value.trim();
+            
+            if (!userName || !userPhone || !meetingPurpose) {
+                showNotification('请填写完整的预定信息', 'error');
+                return;
+            }
+            
+            // 创建预定记录
+            const booking = {
+                roomId: room.id,
+                roomName: room.name,
+                date: selectedDate,
+                timeSlot: selectedTimeSlot,
+                userName: userName,
+                userPhone: userPhone,
+                meetingPurpose: meetingPurpose,
+                status: 'confirmed',
+                bookingTime: new Date().toISOString()
+            };
+            
+            // 添加到预定记录
+            bookings.push(booking);
+            
+            // 保存到API
+            await saveBookings();
+            
+            // 显示成功消息
+            showNotification(`预定成功！${room.name} ${selectedDate} ${selectedTimeSlot} 已为您预定`, 'success');
+            
+            // 重置表单
+            resetBookingForm();
+            
+            // 重新渲染时间段
+            renderTimeSlots();
+            
+            // 重新渲染预定详情
+            renderAllBookings();
+        }
+
+        // 取消预定
+        function cancelBooking() {
+            resetBookingForm();
+        }
+
+        // 重置预定表单
+        function resetBookingForm() {
+            document.getElementById('bookingForm').style.display = 'none';
+            document.getElementById('userName').value = '';
+            document.getElementById('userPhone').value = '';
+            document.getElementById('meetingPurpose').value = '';
+            
+            selectedTimeSlot = null;
+            
+            // 清除选择状态
+            document.querySelectorAll('.time-slot.selected').forEach(slot => {
+                slot.classList.remove('selected');
+            });
+        }
+
+        // 显示通知
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // 切换标签页
+        function switchTab(tabName) {
+            // 切换标签按钮状态
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 切换内容显示
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            if (tabName === 'booking') {
+                document.getElementById('booking-tab').classList.add('active');
+            } else if (tabName === 'booking-details') {
+                document.getElementById('booking-details-tab').classList.add('active');
+                renderAllBookings();
+            }
+        }
+
+        // 渲染所有预定详情
+        function renderAllBookings() {
+            const allBookingsList = document.getElementById('allBookingsList');
+            allBookingsList.innerHTML = '';
+            
+            // 按日期分组预定记录
+            const bookingsByDate = {};
+            bookings.forEach(booking => {
+                if (!bookingsByDate[booking.date]) {
+                    bookingsByDate[booking.date] = [];
+                }
+                bookingsByDate[booking.date].push(booking);
+            });
+            
+            // 获取所有日期并排序
+            const sortedDates = Object.keys(bookingsByDate).sort();
+            
+            if (sortedDates.length === 0) {
+                allBookingsList.innerHTML = '<div class="empty-state">暂无预定记录</div>';
+                return;
+            }
+            
+            // 按日期渲染预定
+            sortedDates.forEach(date => {
+                const dayBookings = document.createElement('div');
+                dayBookings.className = 'day-bookings';
+                
+                const dayTitle = document.createElement('div');
+                dayTitle.className = 'day-title';
+                dayTitle.textContent = date;
+                dayBookings.appendChild(dayTitle);
+                
+                // 按时间排序当天的预定
+                const dayBookingsList = bookingsByDate[date].sort((a, b) => {
+                    const timeA = a.timeSlot.split('-')[0];
+                    const timeB = b.timeSlot.split('-')[0];
+                    return timeA.localeCompare(timeB);
+                });
+                
+                dayBookingsList.forEach(booking => {
+                    const bookingItem = document.createElement('div');
+                    bookingItem.className = 'booking-item';
+                    
+                    const now = new Date();
+                    const bookingDateTime = new Date(booking.date + ' ' + booking.timeSlot.split('-')[0]);
+                    const isExpired = bookingDateTime < now;
+                    
+                    // 根据预定状态设置样式和文本
+                    let statusClass, statusText;
+                    if (booking.status === 'cancelled') {
+                        statusClass = 'cancelled';
+                        statusText = '已取消';
+                    } else if (isExpired) {
+                        statusClass = 'expired';
+                        statusText = '已过期';
+                    } else {
+                        statusClass = 'confirmed';
+                        statusText = '已预定';
+                    }
+                    
+                    bookingItem.innerHTML = `
+                        <div class="booking-header">
+                            <div class="booking-time">${booking.timeSlot}</div>
+                            <div class="booking-status ${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="booking-info-row">
+                            <div class="booking-label">预定人:</div>
+                            <div class="booking-value">${booking.userName}</div>
+                        </div>
+                        <div class="booking-info-row">
+                            <div class="booking-label">联系电话:</div>
+                            <div class="booking-value">${booking.userPhone}</div>
+                        </div>
+                        <div class="booking-info-row">
+                            <div class="booking-label">会议目的:</div>
+                            <div class="booking-value">${booking.meetingPurpose}</div>
+                        </div>
+                        ${booking.status === 'confirmed' && !isExpired ? `<button class="cancel-booking-btn" onclick="cancelBookingById(${booking.id})">取消预定</button>` : ''}
+                    `;
+                    
+                    dayBookings.appendChild(bookingItem);
+                });
+                
+                allBookingsList.appendChild(dayBookings);
+            });
+        }
+
+        // 根据ID取消预定
+        async function cancelBookingById(bookingId) {
+            if (confirm('确定要取消这个预定吗？')) {
+                try {
+                    const response = await fetch(`${API_URL}?id=${bookingId}`, {
+                        method: 'PUT'
+                    });
+                    const data = await response.json();
+                    
+                    showNotification('预定已取消', 'success');
+                    loadBookings();
+                    renderTimeSlots();
+                } catch (error) {
+                    console.error('取消预定失败:', error);
+                    showNotification('取消预定失败', 'error');
+                }
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

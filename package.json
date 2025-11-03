@@ -1,0 +1,14 @@
+{
+  "name": "meeting-room-booking",
+  "version": "1.0.0",
+  "description": "1205会议室预定系统",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/kv": "^1.0.0"
+  }
+}
